@@ -5,7 +5,7 @@
   <license>PHP</license>
 
  <maintainers>
-  <maintainer>        
+  <maintainer>
    <name>Evan Klinger</name>
    <email>eklinger@phash.org</email>
    <role>lead</role>
@@ -50,6 +50,7 @@ struct ph_text_hash
 	TxtHashPoint *p;
 	int count;
 };
+typedef Digest ph_digest_hash;
 </code>
 
 <resource name="ph_video_hash" payload="ph_video_hash" alloc="no">
@@ -73,6 +74,18 @@ struct ph_text_hash
 		free(resource);
  </destruct>
 </resource>
+
+<resource name="ph_digest_hash" payload="ph_digest_hash" alloc="no">
+ <description>
+  A uint32_t resource
+ </description>
+ <destruct>
+	if(resource){
+		free(resource);
+	}
+ </destruct>
+</resource>
+
 <resource name="ph_audio_hash" payload="ph_audio_hash" alloc="no">
  <description>
   A uint32_t resource
@@ -126,11 +139,11 @@ struct ph_text_hash
 		p->hash = video_hash;
 		p->len = len;
 		return_res = p;
-	
+
 	}
 	else
 		RETURN_FALSE;
-]]>   
+]]>
 </code>
   </function>
 
@@ -152,7 +165,34 @@ struct ph_text_hash
 	}
 	else
 		return_res = hash;
-]]>   
+]]>
+    </code>
+</function>
+
+<function name="ph_image_digest" if="HAVE_IMAGE_HASH">
+   <proto>resource ph_digest_hash ph_image_digest(string file)</proto>
+   <summary>pHash Radial image digest</summary>
+   <description>
+	Perceptual image digest based on Radial.
+   </description>
+   <code>
+<![CDATA[
+    double sigma = 1.0;
+    double gamma = 1.0;
+    long angles = 180;
+
+    ph_digest_hash *digest = (ph_digest_hash *)malloc(sizeof(ph_digest_hash));
+	int ret = ph_image_digest(file, sigma, gamma, *digest, angles);
+    if(ret != 0)
+    {
+        free(digest);
+        RETURN_FALSE;
+    }
+    else
+    {
+        return_res = digest;
+    }
+]]>
     </code>
 </function>
 
@@ -198,7 +238,7 @@ struct ph_text_hash
 	}
 	else
 		RETURN_FALSE;
-]]>   
+]]>
 </code>
   </function>
 
@@ -231,7 +271,7 @@ struct ph_text_hash
 	}
 	else
 		RETURN_FALSE;
-]]>   
+]]>
 </code>
 </function>
 
@@ -250,7 +290,31 @@ struct ph_text_hash
 	}
 	else
 		RETURN_DOUBLE(-1);
-]]>   
+]]>
+</code>
+  </function>
+
+<function name="ph_compare_image">
+   <proto>double ph_compare_image(resource ph_digest_hash a, resource ph_digest_hash b)</proto>
+   <summary>Compare two image digest</summary>
+   <description>
+	Compare two image digest in radial style.
+   </description>
+   <code>
+<![CDATA[
+	if(a && b)
+	{
+		double threshold=0.9;
+		double *ps=(double *)malloc(sizeof(double));
+		double similar=0;
+
+		ph_crosscorr(*a, *b, *ps, threshold);
+		similar=*ps; free(ps);
+		RETURN_DOUBLE(similar);
+	}
+	else
+		RETURN_FALSE;
+]]>
 </code>
   </function>
 
@@ -318,12 +382,12 @@ struct ph_text_hash
 	}
 	else
 		RETURN_DOUBLE(-1);
-]]>   
+]]>
 </code>
   </function>
 
 <function name="ph_audio_dist" if="HAVE_AUDIO_HASH">
-   <proto>float ph_audio_dist(resource ph_audio_hash h1,resource ph_audio_hash h2, 
+   <proto>float ph_audio_dist(resource ph_audio_hash h1,resource ph_audio_hash h2,
 		int block_size=256, float thresh=0.30)</proto>
    <summary>pHash audio distance.</summary>
    <description>
@@ -334,7 +398,7 @@ struct ph_text_hash
 	if(h1 && h2)
 	{
 		int Nc;
-		double *cs = ph_audio_distance_ber(h1->hash, h1->len, h2->hash, h2->len, 
+		double *cs = ph_audio_distance_ber(h1->hash, h1->len, h2->hash, h2->len,
 				thresh, block_size, Nc);
 		if(cs)
 		{
@@ -354,7 +418,7 @@ struct ph_text_hash
 	}
 	else
 		RETURN_DOUBLE(-1);
-]]>   
+]]>
 </code>
   </function>
 
@@ -390,7 +454,7 @@ struct ph_text_hash
 	}
 	else
 		RETURN_FALSE;
-]]>   
+]]>
 </code>
   </function>
 
